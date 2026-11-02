@@ -1,5 +1,3 @@
-<!-- TEMPLATE — troque {{CONTACT_EMAIL}} pelo e-mail que recebe as denúncias. -->
-
 # Código de Conduta do Contributor Covenant
 
 ## Nosso Compromisso
@@ -56,7 +54,7 @@ rede social ou atuar como representante designado em um evento on-line ou presen
 
 Casos de comportamento abusivo, de assédio ou de outra forma inaceitável podem ser reportados
 aos líderes da comunidade responsáveis pela aplicação em
-**{{CONTACT_EMAIL}}**.
+**ecociente.jef@gmail.com**.
 Todas as denúncias serão analisadas e investigadas com rapidez e justiça.
 
 Todos os líderes da comunidade são obrigados a respeitar a privacidade e a segurança de quem

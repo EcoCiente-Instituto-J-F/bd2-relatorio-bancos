@@ -1,8 +1,6 @@
-<!-- TEMPLATE — troque os {{ placeholders }} e adapte "Regras do projeto" ao seu projeto. -->
+# Contribuindo com o Relatório dos Bancos de Dados do EcoCiente
 
-# Contribuindo com o {{PROJECT_NAME}}
-
-Obrigado por querer melhorar o {{PROJECT_NAME}}. Este guia explica como configurar o projeto,
+Obrigado por querer melhorar este relatório. Este guia explica como configurar o projeto,
 como testar uma mudança e como abrir um pull request.
 
 Ao participar, você concorda em seguir o [Código de Conduta](CODE_OF_CONDUCT.md). Para reportar
@@ -15,44 +13,41 @@ com o arquivo que você está editando (nomes, idioma dos identificadores e dos 
 
 ## Configurando o ambiente
 
-Você precisa do Python {{PYTHON_VERSION}} ou superior.
+Para editar a documentação basta um editor de texto e um navegador. Para regenerar os diagramas
+você precisa do Python 3.9 ou superior.
 
 ```bash
-git clone https://github.com/{{OWNER}}/{{REPO}}.git
-cd {{REPO}}
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env             # Windows: copy .env.example .env
+git clone https://github.com/EcoCiente-Instituto-J-F/bd2-relatorio-bancos.git
+cd bd2-relatorio-bancos
 ```
 
-Veja o [README](README.md) para saber como executar o projeto.
+Não há dependências a instalar nem `.env` a configurar. Veja o [README](README.md) para os
+comandos de geração dos diagramas.
 
 ## Testando sua mudança
 
-Rode o mesmo comando que o CI roda:
+Este repositório não tem testes automatizados. Antes de abrir o PR:
 
-```bash
-python -m pytest -q
-```
-
-- Toda mudança precisa de testes que falhem sem ela. Correção de bug começa com um teste que
-  reproduz o bug.
-- Os testes não podem chamar APIs pagas, bancos reais nem a rede. Use mocks ou fixtures.
-- Nunca aponte os testes para dados ou serviços de produção.
+- abra `index.html` e `modelo-postgresql-interativo.html` no navegador e confira que a página
+  carrega e que o conteúdo alterado aparece corretamente;
+- se mudou um script `gerar_*.py`, rode-o e confira os SVGs e o `.js` gerados em `assets/`;
+- se mudou uma afirmação da documentação, confira-a no código ou no esquema SQL de origem e
+  diga no PR onde a evidência está. Não afirme o que não foi verificado.
 
 ## Regras do projeto
 
-Adapte esta lista ao seu projeto. Um pull request que quebre alguma destas regras será
-devolvido para ajuste.
+Um pull request que quebre alguma destas regras será devolvido para ajuste.
 
-- **Nenhum segredo no repositório.** O `.env` é ignorado; adicione novas variáveis ao
-  `.env.example` (com um valor padrão seguro).
-- **Nenhum dado pessoal real** em testes, fixtures, exemplos ou issues. Use nomes e ids falsos.
-- **Nenhuma dependência nova sem discussão.** Abra uma issue antes e explique por que a
-  biblioteca padrão ou um pacote já instalado não resolve.
-- Leia a configuração em um único lugar (por exemplo, uma classe `Settings`); não espalhe
-  `os.getenv` pelo código.
+- **Nenhum segredo no repositório.** Nada de senhas, tokens, strings de conexão ou chaves de API
+  na documentação, nos scripts ou nos exemplos.
+- **Nenhum dado pessoal real.** Os exemplos de documentos, linhas e payloads são fictícios.
+  Também não deixe caminhos locais com nome de pessoa nos textos.
+- **Nenhuma dependência nova sem discussão.** Os scripts de diagramas usam só a biblioteca
+  padrão; abra uma issue antes de mudar isso.
+- **Arquivos gerados não se editam à mão.** `assets/modelo-*.svg` e
+  `assets/modelo-postgresql-dados.js` saem dos scripts `gerar_*.py`; altere o script e regenere.
+- **Documente o que foi verificado e o que não foi.** O relatório foi feito sem conexão aos
+  bancos; mantenha essa distinção.
 
 ## Pull requests
 
@@ -60,10 +55,10 @@ devolvido para ajuste.
    `fix/nome-curto`.
 2. Faça commits focados. Usamos prefixos curtos no assunto do commit: `feat:`, `fix:`,
    `chore:`, `docs:`, `test:`, `refactor:`.
-3. Rode a suíte de testes localmente.
+3. Faça as conferências da seção anterior.
 4. Abra um pull request para a `main`. Descreva o que mudou, por quê e como você testou.
    Informe qualquer nova variável de ambiente, migração ou mudança de comportamento.
-5. O CI (`.github/workflows/`) precisa passar.
+5. O PR Bot (`.github/workflows/pr-bot.yml`) gera a descrição da PR; revise o texto gerado.
 6. Um mantenedor revisa a mudança. Responda aos comentários com novos commits; fazemos squash
    ou merge quando for aprovada.
 
@@ -73,6 +68,6 @@ Abra uma issue com:
 
 - o que você esperava e o que aconteceu;
 - os passos que reproduzem o problema (com dados falsos);
-- a sua configuração e o commit que você usou.
+- o commit que você usou e o navegador, se for um problema nas páginas HTML.
 
 Para uma funcionalidade nova, explique o problema que ela resolve antes de propor a solução.

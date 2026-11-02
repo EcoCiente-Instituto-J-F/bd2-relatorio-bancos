@@ -1,8 +1,6 @@
-<!-- TEMPLATE — troque os {{ placeholders }} e adapte "Escopo" e "Checklist de deploy" ao seu projeto. -->
-
 # Política de Segurança
 
-O {{PROJECT_NAME}} {{ONE_LINE_ABOUT_DATA_HANDLED}}. Levamos a sério os relatos sobre isso.
+Este repositório documenta a estrutura dos bancos de dados do EcoCiente (tabelas, coleções, chaves e esquemas), mas não guarda dados de pessoas reais: os exemplos são fictícios e o relatório foi feito sem conexão aos servidores. Levamos a sério os relatos sobre isso.
 
 ## Versões suportadas
 
@@ -19,7 +17,7 @@ release mantidos.
 **Não abra issue, pull request ou discussão pública para um problema de segurança.**
 
 Reporte de forma privada pelo GitHub:
-[**Reportar uma vulnerabilidade**](https://github.com/{{OWNER}}/{{REPO}}/security/advisories/new)
+[**Reportar uma vulnerabilidade**](https://github.com/EcoCiente-Instituto-J-F/bd2-relatorio-bancos/security/advisories/new)
 (repositório → *Security* → *Advisories* → *Report a vulnerability*).
 
 > Ative antes: repositório → *Settings* → *Code security* → *Private vulnerability reporting*.
@@ -45,27 +43,27 @@ Pedimos um prazo razoável para corrigir o problema antes de você divulgá-lo p
 
 Dentro do escopo — este repositório e o comportamento dele:
 
-- Ler ou alterar dados de outro usuário pela API.
-- Burlar autenticação ou autorização.
-- Injeção (SQL, comandos, prompt) que leve à exposição de dados ou a uma ação não autorizada.
-- Dados pessoais ou segredos vazando em logs, traces, métricas ou respostas.
-- Segredos commitados no repositório.
+- Dados pessoais, credenciais, strings de conexão ou segredos commitados (inclusive no histórico do git, na documentação e nos arquivos gerados).
+- Informação na documentação ou nos diagramas que facilite um ataque aos sistemas reais (por exemplo, endereços de servidores, usuários ou chaves).
+- Vulnerabilidade nas páginas HTML (`index.html`, `modelo-postgresql-interativo.html`), como execução de script injetado.
+- Falhas no workflow do PR Bot (`.github/workflows/pr-bot.yml`) que exponham segredos do repositório ou permitam executar código não confiável.
 
 Fora do escopo:
 
 - Bugs sem impacto de segurança — abra uma issue normal.
-- Vulnerabilidades em serviços de terceiros — reporte aos mantenedores deles.
-- Credenciais padrão apenas para desenvolvimento, claramente marcadas (por exemplo, `CHANGEME`
-  no `.env.example`).
-- Negação de serviço enviando grande volume de tráfego para o seu próprio deploy.
+- Vulnerabilidades nos sistemas descritos (EcoCiente, MongoDB, Redis etc.) ou em serviços de terceiros — reporte aos mantenedores deles. Se você perceber uma falha neles ao ler este relatório, use o canal privado acima.
+- Inconsistências entre o relatório e o banco real, tratadas como correção de documentação.
+- Negação de serviço enviando grande volume de tráfego.
 
-## Checklist de deploy
+## Como o repositório se protege
 
-Se você executa o {{PROJECT_NAME}} fora de uma máquina de desenvolvimento:
+| Camada | Onde | O que faz |
+| --- | --- | --- |
+| Exemplos fictícios | `documentacao-bancos-revisada.md`, `index.html` | Documentos e linhas de exemplo usam dados inventados. |
+| PR Bot restrito | `.github/workflows/pr-bot.yml` | Usa `permissions` mínimas, faz checkout do código da branch base e só roda para branches do próprio repositório (não para forks). |
 
-- Defina `APP_ENV=production` e desative qualquer atalho de teste ou debug.
-- Mantenha os segredos em um cofre de segredos ou em um `Secret` do Kubernetes, nunca em
-  `ConfigMap`, na imagem ou no repositório.
-- Dê à role de banco da aplicação só as permissões necessárias (somente leitura, quando possível).
-- Troque todo valor `CHANGEME` antes de expor um serviço.
-- Não exponha endpoints internos (por exemplo, `/metrics`) para a internet pública.
+## Checklist de manutenção
+
+- Antes de publicar, procure por senhas, tokens, strings de conexão e caminhos locais com nome de pessoa nos textos e nos arquivos gerados.
+- Mantenha o segredo do PR Bot (chave do Gemini) apenas em *Settings* → *Secrets*, nunca no repositório.
+- Ative *Private vulnerability reporting* para o link de relato acima funcionar.
