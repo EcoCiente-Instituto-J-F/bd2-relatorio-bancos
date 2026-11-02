@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="light" name="color-scheme"/>
+<meta content="Estrutura atual de MongoDB, Qdrant, Redis, Neo4j e PostgreSQL no EcoCiente." name="description"/>
+<title>Bancos de dados atuais do EcoCiente | arquitetura de dados</title>
+<style>
+    :root {
+      --ink: #0f1723;
+      --green: #064e3b;
+      --green-2: #2e5c41;
+      --deep-blue: #1d464d;
+      --blue: #205867;
+      --pink: #b93c63;
+      --pink-bright: #d64573;
+      --muted: #425a57;
+      --line: #cfd9d1;
+      --paper: #ffffff;
+      --canvas: #f7f3f0;
+      --sage: #e8eee8;
+      --mint: #a7b7aa;
+      --amber: #624718;
+      --amber-bg: #fff3d7;
+      --rose: #722e44;
+      --rose-bg: #fae9ee;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 28px; scrollbar-color: var(--mint) var(--canvas); }
+    body { margin: 0; background: var(--canvas); color: var(--ink); font: 16px/1.67 "Segoe UI", Arial, sans-serif; }
+    ::selection { background: #d9a5b7; color: #0f1723; }
+    .reading-progress { position: fixed; z-index: 20; inset: 0 auto auto 0; width: 0; height: 4px; background: var(--pink-bright); transition: width .08s linear; pointer-events: none; }
+    a { color: var(--green); text-underline-offset: .22em; }
+    a:hover { color: var(--green-2); }
+    a:focus-visible { outline: 3px solid var(--green-2); outline-offset: 4px; border-radius: 3px; }
+    code { font: .92em/1.5 Consolas, "Courier New", monospace; overflow-wrap: anywhere; }
+    .page { max-width: 1280px; margin: 0 auto; padding: 0 38px 80px; }
+    .masthead { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--line); }
+    .brand { color: var(--green); font-family: Georgia, "Times New Roman", serif; font-size: 1.65rem; font-weight: 700; line-height: 1; text-decoration: none; letter-spacing: -.025em; }
+    .masthead-right { display: flex; align-items: center; gap: 22px; }
+    .masthead-note { color: var(--muted); font-size: .84rem; text-align: right; }
+    .print-button { padding: 9px 14px; border: 1px solid var(--green); border-radius: 999px; background: transparent; color: var(--green); cursor: pointer; font: 600 .8rem/1.2 "Segoe UI", Arial, sans-serif; transition: background .25s, color .25s, transform .25s; }
+    .print-button:hover { background: var(--green); color: white; transform: translateY(-2px); }
+    .print-button:focus-visible { outline: 3px solid var(--pink-bright); outline-offset: 3px; }
+    .intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(295px, .62fr); gap: clamp(34px, 5vw, 78px); padding: 78px 0 62px; align-items: center; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2 { font-family: Georgia, "Times New Roman", serif; letter-spacing: -.028em; line-height: 1.12; }
+    h1 { max-width: 16ch; margin-bottom: 20px; font-size: clamp(3.1rem, 4.9vw, 4.7rem); font-weight: 600; line-height: 1.04; text-wrap: balance; }
+    h2 { margin-bottom: 14px; font-size: clamp(2rem, 3vw, 2.85rem); font-weight: 600; }
+    h3 { margin-bottom: 12px; font-size: 1.04rem; line-height: 1.35; }
+    .lead { max-width: 65ch; margin-bottom: 0; color: var(--muted); font-size: 1.11rem; }
+    .botanical-rule { display: flex; align-items: center; gap: 10px; margin: 0 0 23px; color: var(--green-2); }
+    .botanical-rule::after { content: ""; display: block; width: min(210px, 35vw); height: 1px; background: var(--green-2); }
+    .botanical-rule svg { width: 46px; height: 28px; }
+    .intro-side { position: relative; min-width: 0; }
+    .tree-art { width: min(100%, 410px); aspect-ratio: 395 / 330; margin: 0 auto; background: url("assets/large-scale.png") no-repeat 83.1% 52.7% / 366.6% 312.7%; mix-blend-mode: multiply; }
+    .scope { display: grid; grid-template-columns: 154px minmax(0, 1fr); gap: 20px; max-width: 69ch; margin-top: 32px; padding-top: 17px; border-top: 1px solid var(--line); color: var(--muted); font-size: .86rem; }
+    .scope strong { color: var(--green); font-size: .88rem; line-height: 1.45; }
+    .scope p { margin: 0; }
+    .summary { padding: 30px 34px 25px; background: var(--green); color: white; border-radius: var(--radius); }
+    .summary h2 { margin-bottom: 8px; color: white; font-family: Georgia, "Times New Roman", serif; font-size: 1.65rem; font-weight: 600; letter-spacing: -.02em; }
+    .summary p { max-width: 75ch; margin-bottom: 25px; color: #e7f2e9; font-size: .95rem; }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid rgba(255,255,255,.35); }
+    .flow a { display: block; min-height: 100px; padding: 19px 20px 8px 0; border-right: 1px solid rgba(255,255,255,.25); color: white; text-decoration: none; transition: background .35s cubic-bezier(.18,.8,.23,1), padding-left .35s cubic-bezier(.18,.8,.23,1); }
+    .flow a + a { padding-left: 20px; }
+    .flow a:last-child { border-right: 0; }
+    .flow a:hover, .flow a:focus-visible { background: rgba(255,255,255,.09); color: white; padding-left: 25px; }
+    .flow span { display: block; color: #e7f2e9; font-size: .78rem; line-height: 1.35; }
+    .flow strong { display: block; margin-top: 9px; color: white; font-size: 1.18rem; line-height: 1.2; }
+    .layout { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 66px; margin-top: 70px; }
+    .toc { position: sticky; top: 24px; align-self: start; padding-top: 10px; }
+    .toc strong { display: block; margin-bottom: 13px; color: var(--muted); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+    .toc a { display: block; padding: 9px 0 9px 11px; border-bottom: 1px solid var(--line); border-left: 2px solid transparent; color: var(--ink); font-size: .91rem; text-decoration: none; transition: color .2s, border-color .2s, padding-left .2s; }
+    .toc a:hover, .toc a[aria-current="location"] { color: var(--green); border-left-color: var(--pink); padding-left: 15px; }
+    main { min-width: 0; }
+    .db { scroll-margin-top: 24px; padding: 6px 0 58px; border-bottom: 1px solid var(--line); }
+    .db::before { content: ""; display: block; width: 8px; height: 8px; margin-bottom: 23px; border-radius: 50%; background: var(--pink); }
+    .db + .db { padding-top: 58px; }
+    .db-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 25px; margin-bottom: 28px; }
+    .db-head p { max-width: 72ch; margin-bottom: 0; color: var(--muted); }
+    .status { flex: none; margin-top: 7px; padding: 5px 10px; border-radius: 999px; color: #164633; background: #dceee1; font-size: .75rem; font-weight: 700; line-height: 1.3; }
+    .status.partial { color: var(--amber); background: var(--amber-bg); }
+    .status.planned { color: var(--rose); background: var(--rose-bg); }
+    .db-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 38px; }
+    .db-grid > div { min-width: 0; }
+    .label { margin-bottom: 8px; color: var(--green); font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .db-grid p { margin-bottom: 0; max-width: 72ch; }
+    .model { margin-top: 32px; padding: 25px 28px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); }
+    .model h3 { margin-bottom: 14px; }
+    .model ul { display: grid; gap: 10px; margin: 0; padding-left: 20px; }
+    .model li { padding-left: 3px; }
+    .model li::marker { color: var(--green-2); }
+    .model code { color: #07533f; }
+    .note { margin-top: 17px; color: var(--muted); font-size: .87rem; }
+    footer { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-top: 55px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: .78rem; }
+    .footer-brand { display: flex; align-items: center; gap: 12px; }
+    .footer-brand::before { content: ""; display: block; width: 25px; height: 1px; background: var(--green-2); }
+    @media (max-width: 900px) {
+      .intro { grid-template-columns: minmax(0, 1fr) 270px; gap: 24px; padding-top: 55px; }
+      .tree-art { width: 270px; }
+      .layout { grid-template-columns: 1fr; gap: 32px; }
+      .toc { position: static; display: flex; flex-wrap: wrap; gap: 6px 20px; padding: 0 0 18px; border-bottom: 1px solid var(--line); }
+      .toc strong { flex-basis: 100%; margin: 0; }
+      .toc a { border: 0; padding: 6px 0; }
+    }
+    @media (max-width: 620px) {
+      .page { padding: 0 18px 48px; }
+      .masthead { align-items: flex-start; padding: 20px 0; }
+      .brand { font-size: 1.4rem; }
+      .masthead-note { max-width: 125px; font-size: .73rem; }
+      .intro { grid-template-columns: 1fr; padding: 43px 0 35px; }
+      h1 { font-size: clamp(2.7rem, 11vw, 4rem); }
+      .lead { font-size: 1.04rem; }
+      .scope { grid-template-columns: 1fr; gap: 5px; margin-top: 24px; }
+      .tree-art { width: min(76vw, 280px); }
+      .summary { padding: 24px 20px 17px; }
+      .flow { grid-template-columns: 1fr 1fr; }
+      .flow a { min-height: 94px; padding: 15px 12px 10px 0; }
+      .flow a + a { padding-left: 12px; }
+      .flow a:nth-child(2) { border-right: 0; }
+      .flow a:nth-child(n+3) { border-top: 1px solid rgba(255,255,255,.25); }
+      .layout { margin-top: 36px; }
+      .db-head { display: block; }
+      .status { display: inline-block; margin-top: 15px; }
+      .db-grid { grid-template-columns: 1fr; gap: 20px; }
+      .db, .db + .db { padding-top: 42px; padding-bottom: 44px; }
+      .db:first-child { padding-top: 0; }
+      .model { padding: 18px; }
+      .masthead-right { gap: 8px; }
+      .masthead-note { display: none; }
+      .print-button { padding: 8px 10px; font-size: .72rem; }
+      footer { display: block; }
+      .footer-brand { margin-bottom: 12px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .flow a, .print-button, .reading-progress { transition: none; } }
+    @media print {
+      @page { size: A4; margin: 17mm; }
+      body { background: white; color: #111; font-size: 10pt; }
+      .page { max-width: none; padding: 0; }
+      .masthead { padding: 0 0 12px; }
+      .reading-progress, .print-button { display: none; }
+      .intro { padding: 24px 0; }
+      h1 { font-size: 30pt; }
+      h2 { font-size: 20pt; }
+      .layout { display: block; margin-top: 25px; }
+      .toc { display: none; }
+      .summary, .model { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .summary { background: #e6eee9; color: #111; }
+      .summary h2, .summary p, .flow strong, .flow span { color: #111; }
+      .flow a { background: #f2f6f2; color: #111; min-height: auto; }
+      .tree-art { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .db, .db + .db { padding: 22px 0; }
+      .db-head, .db-grid, .model { break-inside: avoid; }
+      footer { margin-top: 25px; }
+    }
+  
+    /* Conteúdo longo: a leitura segue a mesma identidade do relatório original. */
+    .flow { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .flow a { min-height: 112px; }
+    .article { max-width: 100%; }
+    .article .db-head { align-items: baseline; margin-bottom: 20px; }
+    .article .db-head h2 { margin-bottom: 0; }
+    .article > p, .article > ul, .article > ol { max-width: 74ch; }
+    .article > p { margin: 0 0 1.25em; }
+    .article h3 { margin: 2.2em 0 .75em; color: var(--green); font: 600 1.42rem/1.25 Georgia, "Times New Roman", serif; letter-spacing: -.018em; scroll-margin-top: 24px; }
+    .article h3 + p { margin-top: 0; }
+    .article ul, .article ol { padding-left: 1.4rem; margin: 0 0 1.35rem; }
+    .article li { padding-left: .16rem; margin-bottom: .62rem; }
+    .article li::marker { color: var(--green-2); font-weight: 700; }
+    .article code { color: #064b39; background: #e7eee9; padding: .07em .24em; border-radius: 4px; }
+    .article pre { max-width: 100%; overflow-x: auto; margin: 1.25rem 0 1.65rem; padding: 21px 24px; border-radius: 12px; background: #183c3d; color: #f4fbf6; font-size: .88rem; line-height: 1.65; scrollbar-color: #94aea2 #183c3d; }
+    .article pre code { color: inherit; background: transparent; padding: 0; white-space: pre; }
+    .article .table-scroll { max-width: 100%; overflow-x: auto; margin: 1.2rem 0 1.8rem; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); scrollbar-color: var(--mint) var(--paper); }
+    .article table { width: 100%; border-collapse: collapse; font-size: .86rem; line-height: 1.5; font-variant-numeric: tabular-nums; }
+    .article th, .article td { padding: 12px 15px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+    .article tr:last-child td { border-bottom: 0; }
+    .article thead { color: var(--green); background: var(--sage); }
+    .article th { font-weight: 700; }
+    .article tbody tr:nth-child(even) { background: #fafbf9; }
+    .article td code { background: transparent; padding: 0; }
+    .article .table-scroll:focus-visible { outline: 3px solid var(--pink); outline-offset: 3px; }
+    .article > p:first-of-type { color: var(--muted); font-size: 1.04rem; }
+    .article strong { color: var(--green); }
+    .article pre strong { color: inherit; }
+    .pg-position { margin: 29px 0 35px; padding: 24px 28px; background: var(--sage); border-radius: var(--radius); }
+    .pg-position h3 { margin: 0 0 14px; }
+    .pg-position dl { margin: 0; }
+    .pg-position dl > div { display: grid; grid-template-columns: 155px minmax(0, 1fr); gap: 18px; padding: 12px 0; border-top: 1px solid var(--line); }
+    .pg-position dt { color: var(--green); font-weight: 700; }
+    .pg-position dd { margin: 0; }
+    .pg-position .pgadmin-note { margin: 14px 0 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: .9rem; }
+    .flow a:focus-visible, .toc a:focus-visible { outline: 3px solid var(--pink-bright); outline-offset: -3px; }
+    @media (max-width: 1100px) { .flow { grid-template-columns: repeat(3, minmax(0, 1fr)); } .flow a:nth-child(3) { border-right: 0; } .flow a:nth-child(n+4) { border-top: 1px solid rgba(255,255,255,.25); } }
+    @media (max-width: 620px) { .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); } .flow a:nth-child(3) { border-right: 1px solid rgba(255,255,255,.25); } .flow a:nth-child(even) { border-right: 0; } .flow a:nth-child(5) { grid-column: 1 / -1; border-right: 0; } .article .table-scroll { margin-left: -2px; margin-right: -2px; } .article table { min-width: 580px; } .article h3 { font-size: 1.25rem; } .article pre { padding: 16px; } .pg-position { padding: 19px; } .pg-position dl > div { grid-template-columns: 1fr; gap: 2px; } }
+    @media print { .article .table-scroll { overflow: visible; border: 0; } .article table { font-size: 8pt; } .article th, .article td { padding: 5px 7px; } .article h3 { break-after: avoid; } .article tr, .article pre { break-inside: avoid; } .flow { grid-template-columns: repeat(5, 1fr); } }
+
+    .model-diagram { margin: 30px 0 34px; }
+    .diagram-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--canvas); scrollbar-color: var(--mint) var(--canvas); }
+    .diagram-scroll:focus-visible, .diagram-scroll a:focus-visible { outline: 3px solid var(--pink); outline-offset: 3px; }
+    .diagram-scroll a { display: block; }
+    .diagram-scroll img { display: block; width: 100%; height: auto; }
+    .model-diagram figcaption { margin-top: 9px; color: var(--muted); font-size: .84rem; }
+    .zoom-diagram { position: relative; }
+    .zoom-diagram .diagram-scroll { height: clamp(340px, 55vw, 600px); overflow: auto; cursor: grab; touch-action: none; }
+    .zoom-diagram .diagram-scroll.is-panning { cursor: grabbing; }
+    .zoom-diagram .diagram-scroll a { width: max-content; }
+    .zoom-diagram .diagram-scroll img { width: auto; max-width: none; height: auto; user-select: none; }
+    .diagram-tools { position: absolute; z-index: 2; right: 14px; top: 14px; display: flex; gap: 5px; padding: 5px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.97); box-shadow: 0 7px 20px rgba(15,23,35,.09); }
+    .diagram-tools button { min-width: 34px; height: 32px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--green); font-weight: 700; cursor: pointer; }
+    .diagram-tools button:hover { background: var(--sage); }
+    .diagram-tools button:focus-visible { outline: 3px solid var(--pink); outline-offset: 1px; }
+    .diagram-tools .fit { font-size: 12px; }
+    .pg-diagrams { margin: 35px 0 42px; }
+    .pg-diagrams > p { max-width: 75ch; }
+    .pg-map-launch { display: flex; justify-content: space-between; align-items: baseline; gap: 15px; margin: 23px 0 9px; }
+    .pg-map-launch h4 { margin: 0; color: var(--green); font-size: 1.07rem; }
+    .pg-map-launch a { font-size: .86rem; font-weight: 700; }
+    .pg-map-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px 18px; }
+    .pg-map-frame { display: block; width: 100%; height: 1040px; border: 1px solid var(--line); border-radius: 13px; background: var(--canvas); }
+    @media (max-width: 620px) { .pg-map-launch { display: block; } .pg-map-links { justify-content: flex-start; margin-top: 8px; } }
+    .pg-static-set { margin: 17px 0 0; }
+    .pg-static-set > summary { padding: 12px 0; color: var(--green); cursor: pointer; font-weight: 700; }
+    .pg-static-set > summary:focus-visible { outline: 3px solid var(--pink); outline-offset: 3px; }
+    .pg-diagram-panel { margin: 10px 0; border: 1px solid var(--line); border-radius: 13px; background: #fff; overflow: hidden; }
+    .pg-diagram-panel summary { padding: 18px 21px; color: var(--green); font-weight: 700; cursor: pointer; }
+    .pg-diagram-panel summary::marker { color: var(--pink); }
+    .pg-diagram-panel summary:focus-visible { outline: 3px solid var(--pink); outline-offset: -4px; }
+    .pg-diagram-panel[open] summary { border-bottom: 1px solid var(--line); background: var(--sage); }
+    .pg-diagram-panel .model-diagram { margin: 17px; }
+    .pg-diagram-panel .diagram-scroll { max-height: 570px; overflow: auto; }
+    .pg-diagram-panel .diagram-scroll img { width: 1460px; max-width: none; }
+    @media (max-width: 620px) { .diagram-scroll img { width: 960px; max-width: none; } .model-diagram { margin: 24px 0 30px; } }
+    @media print { .diagram-scroll, .zoom-diagram .diagram-scroll { height: auto; overflow: visible; } .diagram-scroll img, .zoom-diagram .diagram-scroll img { width: 100% !important; max-width: 100%; } .zoom-diagram .diagram-scroll a { width: 100%; } .diagram-tools { display: none; } .model-diagram { break-inside: avoid; } }
+    @media print { .pg-diagram-panel .diagram-scroll { max-height: none; overflow: visible; } .pg-diagram-panel .diagram-scroll img { width: 100%; max-width: 100%; } .pg-diagram-panel { break-inside: avoid; } }
+    @media print { .pg-map-launch, .pg-map-frame { display: none; } }
+</style>
+</head>
+<body>
+<div aria-hidden="true" class="reading-progress"></div>
+<div class="page">
+<header class="masthead">
+<a aria-label="EcoCiente, voltar ao início" class="brand" href="#inicio">
+        EcoCiente
+      </a>
+<div class="masthead-right">
+<div class="masthead-note">Arquitetura de dados<br/>01/11/2026</div>
+<button class="print-button" onclick="window.print()" type="button">Imprimir relatório</button>
+</div>
+</header>
+<section aria-labelledby="titulo" class="intro" id="inicio">
+<div>
+<h1 id="titulo">O que cada banco faz no EcoCiente</h1>
+<div aria-hidden="true" class="botanical-rule"><svg fill="none" viewbox="0 0 48 30"><path d="M2 25c14-3 25-10 42-22" stroke="currentColor" stroke-linecap="round" stroke-width="1.7"></path><path d="M18 16C8 15 6 10 6 7c7-2 12 1 14 7M30 10c-3-8 0-11 4-13 3 5 2 9-2 13M32 12c8-1 11 2 12 6-5 2-10 1-14-4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"></path></svg></div>
+<p class="lead">Atualmente, a arquitetura do EcoCiente distribui conversas, FAQs, rankings, relações entre entidades e dados operacionais entre cinco bancos.</p>
+<aside aria-label="Escopo da análise" class="scope">
+<strong>Dados deste levantamento</strong>
+<p>O PostgreSQL reúne 59 tabelas. O conjunto de perguntas frequentes contém 64 respostas canônicas.</p>
+</aside>
+</div>
+<div class="intro-side">
+<div aria-label="Árvore do logo EcoCiente, isolada do nome da marca e sem fundo" class="tree-art" role="img"></div>
+</div>
+</section>
+<section aria-labelledby="mapa-titulo" class="summary">
+<h2 id="mapa-titulo">Mapa rápido</h2>
+<p>Escolha um banco para ver sua estrutura e exemplos de uso no EcoCiente.</p>
+<div aria-label="Responsabilidade principal de cada banco" class="flow"><a href="#mongodb"><span>Memória das conversas</span><strong>MongoDB</strong></a><a href="#qdrant"><span>Perguntas frequentes</span><strong>Qdrant</strong></a><a href="#redis"><span>Acesso rápido</span><strong>Redis</strong></a><a href="#neo4j"><span>Relações</span><strong>Neo4j</strong></a><a href="#postgresql"><span>Base geral do sistema</span><strong>PostgreSQL</strong></a></div>
+</section>
+<div class="layout">
+<nav aria-label="Navegação do relatório" class="toc"><strong>Neste relatório</strong><a href="#mongodb">MongoDB</a><a href="#qdrant">Qdrant</a><a href="#redis">Redis</a><a href="#neo4j">Neo4j</a><a href="#postgresql">PostgreSQL</a></nav>
+<main><section aria-labelledby="mongodb-titulo" class="db article" id="mongodb"><div class="db-head"><h2 id="mongodb-titulo">MongoDB</h2><span class="status">Memória</span></div>
+<p>O MongoDB guarda as conversas com a Eko. A coleção <code>sessoes</code> mantém o histórico em andamento; <code>memoria_usuarios</code> guarda um resumo por pessoa para as próximas conversas. As duas coleções pertencem ao banco <code>ecociente</code>.</p><figure class="model-diagram zoom-diagram" data-diagram="mongodb"><div class="diagram-tools" aria-label="Controles do mapa do MongoDB"><button type="button" class="zoom-out" aria-label="Diminuir zoom do MongoDB">−</button><button type="button" class="zoom-in" aria-label="Aumentar zoom do MongoDB">+</button><button type="button" class="fit">Enquadrar</button></div><div aria-label="Modelo conceitual de MongoDB; arraste para mover e role para ampliar" class="diagram-scroll" role="region" tabindex="0"><a aria-label="Abrir imagem do modelo conceitual de MongoDB" href="assets/modelo-mongodb.svg"><img alt="Diagrama conceitual do MongoDB: usuário ligado às coleções de sessões e memória; mensagens dentro da sessão." loading="lazy" draggable="false" width="1540" height="900" src="assets/modelo-mongodb.svg"/></a></div><figcaption>Arraste para mover e role para ampliar. Abra a imagem para ver em tamanho integral.</figcaption></figure>
+<h3>Sessões de conversa</h3>
+<p>A aplicação monta os documentos de <code>sessoes</code> com os seguintes campos:</p>
+<div aria-label="Tabela de MongoDB" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>O que guarda</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_id</code></td>
+<td>Identificador do MongoDB</td>
+<td>Identificação interna; o serviço omite esse campo ao devolver a sessão.</td>
+</tr>
+<tr>
+<td><code>session_id</code></td>
+<td>UUID em texto</td>
+<td>Identificador usado pela aplicação para retomar a conversa.</td>
+</tr>
+<tr>
+<td><code>usuario_id</code></td>
+<td>Inteiro</td>
+<td>Dono da sessão.</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>Texto</td>
+<td>Começa como <code>active</code>.</td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td>Data e hora UTC</td>
+<td>Criação da sessão.</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>Data e hora UTC</td>
+<td>Última atualização.</td>
+</tr>
+<tr>
+<td><code>expira_em</code></td>
+<td>Data e hora UTC</td>
+<td>Momento a partir do qual a sessão pode expirar.</td>
+</tr>
+<tr>
+<td><code>ultima_rota</code></td>
+<td>Texto ou <code>null</code></td>
+<td>Última rota escolhida pela Eko.</td>
+</tr>
+<tr>
+<td><code>memory_summary</code></td>
+<td>Texto</td>
+<td>Resumo das mensagens antigas.</td>
+</tr>
+<tr>
+<td><code>memory_revision</code></td>
+<td>Inteiro</td>
+<td>Versão do resumo, usada para evitar gravações concorrentes.</td>
+</tr>
+<tr>
+<td><code>messages</code></td>
+<td>Lista de documentos</td>
+<td>Mensagens do usuário e da Eko.</td>
+</tr>
+<tr>
+<td><code>memoria_longa_ate</code></td>
+<td>Data e hora UTC, opcional</td>
+<td>Marca até qual mensagem a memória entre conversas já foi consolidada.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Cada mensagem em <code>messages</code> tem <code>id</code>, <code>role</code>, <code>content</code> e <code>created_at</code>. O papel pode ser <code>user</code> ou <code>assistant</code>. O campo <code>bloqueada</code> identifica mensagens filtradas pelo controle de entrada. As mensagens são acrescentadas à lista com <code>$push</code>.</p>
+<p><code>session_id</code> tem índice único. <code>expira_em</code> tem índice TTL com <code>expireAfterSeconds=0</code>. O prazo padrão é de 1.800 segundos, ou 30 minutos, e é renovado quando novas mensagens entram ou a memória da sessão é compactada. Ao encerrar a sessão, a API remove o documento e devolve <code>closed</code> como resultado.</p>
+<p>Exemplo de sessão, com as datas apresentadas como texto:</p>
+<pre><code class="language-json">{
+  "session_id": "d45e5e29-0453-4c3a-8ed4-2bd45f1525d9",
+  "usuario_id": 42,
+  "status": "active",
+  "created_at": "2026-10-29T15:00:00Z",
+  "updated_at": "2026-10-29T15:01:00Z",
+  "expira_em": "2026-10-29T15:31:00Z",
+  "ultima_rota": "rota_definida_pelo_fluxo",
+  "memory_summary": "",
+  "memory_revision": 0,
+  "messages": [
+    {
+      "id": "a1b2c3d4e5f6",
+      "role": "user",
+      "content": "Como devo descartar vidro?",
+      "created_at": "2026-10-29T15:00:30Z"
+    },
+    {
+      "id": "f6e5d4c3b2a1",
+      "role": "assistant",
+      "content": "Resposta ilustrativa da Eko.",
+      "created_at": "2026-10-29T15:01:00Z"
+    }
+  ]
+}
+</code></pre>
+<p>Uma pessoa autenticada envia uma pergunta sem <code>session_id</code>. A aplicação cria a sessão, grava a pergunta e depois a resposta. Na próxima pergunta, o mesmo <code>session_id</code> permite recuperar o histórico. Quando a conversa passa de 20 mensagens, o fluxo normal pode resumir as antigas em <code>memory_summary</code> e manter as 6 mais recentes em <code>messages</code>. <code>memory_revision</code> controla gravações concorrentes desse resumo.</p>
+<h3>Memória entre conversas</h3>
+<p><code>memoria_usuarios</code> mantém um documento por pessoa, com os seguintes campos:</p>
+<div aria-label="Tabela de MongoDB" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>O que guarda</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_id</code></td>
+<td>Identificador do MongoDB</td>
+<td>Identificação interna, omitida na leitura do serviço.</td>
+</tr>
+<tr>
+<td><code>usuario_id</code></td>
+<td>Inteiro</td>
+<td>Dono da memória; possui índice único.</td>
+</tr>
+<tr>
+<td><code>texto</code></td>
+<td>Texto</td>
+<td>Resumo consolidado do que o usuário contou.</td>
+</tr>
+<tr>
+<td><code>revision</code></td>
+<td>Inteiro</td>
+<td>Versão usada para evitar que uma gravação antiga substitua uma mais nova.</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>Data e hora UTC</td>
+<td>Última alteração.</td>
+</tr>
+</tbody>
+</table></div>
+<p>O primeiro resumo cria o documento. As atualizações seguintes usam <code>revision</code> para controlar versões concorrentes. Para apagar essa memória, o serviço esvazia <code>texto</code> e aumenta <code>revision</code>; o documento permanece. Exemplo ilustrativo:</p>
+<pre><code class="language-json">{
+  "usuario_id": 42,
+  "texto": "- prefere respostas curtas\n- tem uma composteira em casa",
+  "revision": 1,
+  "updated_at": "2026-10-29T15:31:00Z"
+}
+</code></pre>
+<p>A Eko usa <code>memoria_usuarios.texto</code> para compor o contexto de conversas futuras. Ao encerrar uma sessão, a API consolida as mensagens pendentes e remove o documento de <code>sessoes</code>.</p>
+</section><section aria-labelledby="qdrant-titulo" class="db article" id="qdrant"><div class="db-head"><h2 id="qdrant-titulo">Qdrant</h2><span class="status">Busca semântica</span></div>
+<p>Atualmente, o Qdrant cuida da busca semântica das perguntas frequentes. A aplicação transforma a pergunta em vetor, encontra FAQs próximas e seleciona a resposta canônica do melhor resultado.</p><figure class="model-diagram"><div aria-label="Modelo conceitual de qdrant" class="diagram-scroll" role="region" tabindex="0"><a aria-label="Abrir imagem do modelo conceitual de qdrant" href="assets/modelo-qdrant.svg"><img alt="Diagrama conceitual do Qdrant: FAQ canônica transformada em vetor e armazenada na coleção faq com payload." loading="lazy" src="assets/modelo-qdrant.svg"/></a></div><figcaption>Modelo conceitual resumido. Abra a imagem para ver em tamanho maior.</figcaption></figure><p>O conjunto atual contém <strong>64 FAQs canônicas</strong>; <strong>32</strong> têm perfis relacionados.</p>
+<h3>Como uma FAQ vira um ponto</h3>
+<p>O carregador lê as perguntas frequentes canônicas. Cada entrada reúne um identificador como <code>FAQ-001</code>, título, intenção, perfis relacionados e resposta canônica; palavras-chave são opcionais.</p>
+<div aria-label="Tabela de Qdrant" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Elemento</th>
+<th>Estrutura definida</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Coleção</td>
+<td>Nome configurável, com <code>faq</code> como padrão. Cada ponto tem um vetor sem nome.</td>
+</tr>
+<tr>
+<td>ID do ponto</td>
+<td>UUID versão 5 derivado de um namespace fixo e do <code>faq_id</code>. A mesma FAQ recebe o mesmo ID em novas cargas.</td>
+</tr>
+<tr>
+<td>Texto enviado ao modelo</td>
+<td>Título, resposta canônica e, quando existem, palavras-chave.</td>
+</tr>
+<tr>
+<td>Modelo</td>
+<td><code>intfloat/multilingual-e5-large</code> por padrão. Para modelos da família E5, os documentos recebem o prefixo <code>passage: </code> e as perguntas, <code>query: </code>.</td>
+</tr>
+<tr>
+<td>Dimensão</td>
+<td>Dimensão determinada pelo modelo de embedding configurado.</td>
+</tr>
+<tr>
+<td>Distância</td>
+<td>Cosseno (<code>COSINE</code>).</td>
+</tr>
+<tr>
+<td>Payload</td>
+<td><code>faq_id</code>, <code>titulo</code>, <code>intencao</code>, <code>perfis_relacionados</code>, <code>resposta_canonica</code>, <code>palavras_chave</code>, <code>tipo</code>, <code>categoria</code>, <code>perfis_texto</code>, <code>embedding_model</code> e <code>content_hash</code>.</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>perfis_relacionados</code> e <code>palavras_chave</code> são listas. <code>tipo</code> recebe <code>faq_canonica</code>, com índice <code>KEYWORD</code>. O <code>score</code> de similaridade é calculado em cada busca, fora do payload persistido.</p>
+<p>Exemplo ilustrativo de um ponto, com os campos de identificação, vetor e payload:</p>
+<pre><code class="language-text">id: &lt;UUID v5 derivado de FAQ-001&gt;
+vector: &lt;vetor numérico gerado do título, resposta e palavras-chave&gt;
+payload:
+  faq_id: "FAQ-001"
+  titulo: "O que é o EcoCiente?"
+  intencao: "visão_geral"
+  perfis_relacionados: []
+  resposta_canonica: "Resposta ilustrativa da FAQ."
+  palavras_chave: ["EcoCiente", "aplicativo"]
+  tipo: "faq_canonica"
+  categoria: "Exemplo"
+  perfis_texto: "Todos"
+  embedding_model: "intfloat/multilingual-e5-large"
+  content_hash: &lt;hash calculado do payload&gt;
+</code></pre>
+<h3>Carga e busca</h3>
+<p>O modo <code>--dry-run</code> valida as FAQs e mostra um resumo da carga. A carga normal cria a coleção e grava FAQs novas ou alteradas com <code>upsert</code>. <code>content_hash</code> controla o recálculo dos vetores quando o conteúdo muda. O ID determinístico mantém a identidade da FAQ entre cargas. As opções <code>--manter-ausentes</code> e <code>--recriar</code> controlam, respectivamente, a retenção de FAQs antigas e a recriação da coleção.</p>
+<p>Na consulta, o serviço pede até três resultados por padrão, junto com seus payloads. Ele seleciona a primeira resposta com similaridade mínima de <code>0,80</code>, conteúdo preenchido e perfil compatível com o usuário. Quando necessário, o fluxo de RAG também pode usar um modelo de linguagem.</p>
+</section><section aria-labelledby="redis-titulo" class="db article" id="redis"><div class="db-head"><h2 id="redis-titulo">Redis</h2><span class="status">Acesso rápido</span></div>
+<p>O Redis guarda o ponteiro da sessão de cada usuário, usa um bloqueio temporário para processar uma mensagem por vez e organiza a leitura dos rankings de moradores e torres. O PostgreSQL mantém o histórico oficial de pontos; o Redis atende às consultas de posição e pontuação.</p><figure class="model-diagram"><div aria-label="Modelo conceitual de redis" class="diagram-scroll" role="region" tabindex="0"><a aria-label="Abrir imagem do modelo conceitual de redis" href="assets/modelo-redis.svg"><img alt="Diagrama conceitual do Redis: chaves de sessão e listas ordenadas de rankings de moradores e torres." loading="lazy" src="assets/modelo-redis.svg"/></a></div><figcaption>Modelo conceitual resumido. Abra a imagem para ver em tamanho maior.</figcaption></figure>
+<p>O cliente usa <code>REDIS_URL</code>, decodifica respostas como texto (<code>decode_responses=True</code>) e tem tempo limite de conexão configurável. O endereço padrão de desenvolvimento é <code>redis://localhost:6379/0</code>.</p>
+<div aria-label="Tabela de Redis" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Chave</th>
+<th>Tipo</th>
+<th>Conteúdo e funcionamento</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>session:ptr:&lt;usuario_id&gt;</code></td>
+<td>String</td>
+<td>Guarda o <code>session_id</code>. É regravada quando entra uma mensagem e removida ao fechar a sessão, se ainda apontar para ela. Prazo padrão de 1.800 segundos.</td>
+</tr>
+<tr>
+<td><code>session:lock:&lt;session_id&gt;</code></td>
+<td>String</td>
+<td>Guarda um token aleatório enquanto uma mensagem é processada. O bloqueio impede que duas réplicas assumam a mesma sessão. Na renovação e na liberação, o token é conferido. O prazo padrão é de 30 segundos, renovado durante o processamento.</td>
+</tr>
+<tr>
+<td><code>ranking:moradores:condominio:&lt;condominio_id&gt;:ciclo:&lt;ciclo_id&gt;</code></td>
+<td>Sorted Set</td>
+<td>Membros identificados por texto e pontuações numéricas. Permite consultar a posição do próprio <code>usuario_id</code>.</td>
+</tr>
+<tr>
+<td><code>ranking:torres:condominio:&lt;condominio_id&gt;:ciclo:&lt;ciclo_id&gt;</code></td>
+<td>Sorted Set</td>
+<td>Membros e pontuações das torres, devolvidos na listagem do ranking.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Os rankings usam <em>Sorted Sets</em> para ordenar pontos. As consultas aplicam <code>ZREVRANGE</code>, <code>ZSCORE</code> e <code>ZREVRANK</code>.</p>
+<p>Exemplo ilustrativo:</p>
+<pre><code class="language-text">session:ptr:42  →  "e1a2b3c4-..."          (String; prazo padrão de 1.800 s)
+
+ranking:moradores:condominio:7:ciclo:3     (Sorted Set esperado)
+  membro "18"  →  1.380 pontos
+  membro "42"  →  1.250 pontos
+</code></pre>
+<p>O ranking apresenta os moradores com maior pontuação por ciclo e condomínio. Cada resultado mostra identificador, pontos e posição; a pessoa autenticada também pode consultar seus próprios pontos e sua colocação.</p>
+</section><section aria-labelledby="neo4j-titulo" class="db article" id="neo4j"><div class="db-head"><h2 id="neo4j-titulo">Neo4j</h2><span class="status">Grafo</span></div>
+<p>O Neo4j organiza em grafo as entidades do PostgreSQL. Os dados relacionais formam nós e vínculos que permitem procurar caminhos entre entidades, listar conexões e identificar usuários mais conectados em um condomínio.</p><figure class="model-diagram zoom-diagram" data-diagram="neo4j"><div class="diagram-tools" aria-label="Controles do mapa do Neo4j"><button type="button" class="zoom-out" aria-label="Diminuir zoom do Neo4j">−</button><button type="button" class="zoom-in" aria-label="Aumentar zoom do Neo4j">+</button><button type="button" class="fit">Enquadrar</button></div><div aria-label="Modelo conceitual de Neo4j; arraste para mover e role para ampliar" class="diagram-scroll" role="region" tabindex="0"><a aria-label="Abrir imagem do modelo conceitual de Neo4j" href="assets/modelo-neo4j.svg"><img alt="Diagrama conceitual do Neo4j: nós de usuário, condomínio, torre, cooperativa, curso, postagem e categoria com relações." loading="lazy" draggable="false" width="1800" height="1260" src="assets/modelo-neo4j.svg"/></a></div><figcaption>Arraste para mover e role para ampliar. Abra a imagem para ver em tamanho integral.</figcaption></figure>
+<h3>Nós e relações</h3>
+<p>O grafo tem sete tipos de nó: <code>Usuario</code>, <code>Condominio</code>, <code>Torre</code>, <code>Cooperativa</code>, <code>CategoriaResiduo</code>, <code>Curso</code> e <code>Postagem</code>. Cada nó usa <code>id</code> como identificador, com restrição de unicidade por tipo. O nó técnico <code>EtlCheckpoint</code> registra o término das cargas.</p>
+<div aria-label="Tabela de Neo4j" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Relação</th>
+<th>O que liga</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>(Usuario)-[:MORA_EM]-&gt;(Condominio)</code> e <code>(Usuario)-[:PERTENCE_A]-&gt;(Condominio)</code></td>
+<td>Moradia e vínculo aprovado e ativo de uma pessoa com o condomínio.</td>
+</tr>
+<tr>
+<td><code>(Torre)-[:PERTENCE_A]-&gt;(Condominio)</code></td>
+<td>Torre e condomínio ao qual ela pertence.</td>
+</tr>
+<tr>
+<td><code>(Cooperativa)-[:REPRESENTADA_POR]-&gt;(Usuario)</code></td>
+<td>Cooperativa e usuário que a representa.</td>
+</tr>
+<tr>
+<td><code>(Usuario)-[:CRIOU]-&gt;(Postagem)</code></td>
+<td>Autor e postagem.</td>
+</tr>
+<tr>
+<td><code>(Postagem)-[:NO_CONDOMINIO]-&gt;(Condominio)</code>, <code>[:NA_TORRE]-&gt;(Torre)</code> e <code>[:DA_CATEGORIA]-&gt;(CategoriaResiduo)</code></td>
+<td>Local e categoria da postagem.</td>
+</tr>
+<tr>
+<td><code>(Usuario)-[:VALIDOU]-&gt;(Postagem)</code> e <code>(Usuario)-[:DENUNCIOU]-&gt;(Postagem)</code></td>
+<td>Validação ou denúncia, com propriedades da interação.</td>
+</tr>
+<tr>
+<td><code>(Usuario)-[:APROVADO_EM]-&gt;(Curso)</code> e <code>(Usuario)-[:TEM_DIFICULDADE_EM]-&gt;(Curso)</code></td>
+<td>Resultado agregado das tentativas de quiz.</td>
+</tr>
+<tr>
+<td><code>(Curso)-[:RECOMENDADO_PARA]-&gt;(Usuario)</code></td>
+<td>Recomendação por dificuldade no curso ou por aprovações de pessoas do mesmo condomínio.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Exemplo ilustrativo de uma pergunta que atravessa mais de um vínculo:</p>
+<pre><code class="language-text">(Usuario {id: 42, nome: "Ana"})-[:PERTENCE_A]-&gt;(Condominio {id: 7, nome: "Jardim"})
+(Usuario {id: 42})-[:CRIOU]-&gt;(Postagem {id: 91})
+(Postagem {id: 91})-[:DA_CATEGORIA]-&gt;(CategoriaResiduo {id: 3, nome: "Vidro"})
+</code></pre>
+<p>Essas relações permitem investigar postagens de vidro feitas por pessoas vinculadas a um condomínio. Também é possível procurar o menor caminho entre duas entidades e listar suas conexões diretas, respeitando os tipos de nó, os tipos de relação e o escopo do condomínio e do usuário.</p>
+<h3>Como o grafo é atualizado</h3>
+<p>O grafo recebe uma carga completa inicial e atualizações incrementais. Cada atualização considera o último ponto concluído e uma sobreposição de dez minutos para captar alterações posteriores. A carga completa também recalcula as recomendações derivadas.</p>
+<p>As atualizações programadas mantêm os vínculos do grafo alinhados aos dados relacionais.</p>
+</section><section aria-labelledby="postgresql-titulo" class="db article" id="postgresql"><div class="db-head"><h2 id="postgresql-titulo">PostgreSQL</h2><span class="status">Base geral</span></div>
+<p>O PostgreSQL mantém a base geral do EcoCiente: pessoas, condomínios, unidades, cooperativas, descartes, coletas, educação, auditoria e pontos. O esquema também reúne as tabelas de análise. <code>tb_movimentacoes_pontos</code> registra o histórico oficial de pontos, lido pelo ranking no Redis. O Neo4j recebe dados das tabelas relacionais para formar o grafo.</p>
+<p>Atualmente, o esquema <code>public</code> reúne 59 tabelas: 50 operacionais com prefixo <code>tb_</code>, sete dimensões <code>dim_</code> e duas tabelas de fatos <code>fato_</code>.</p>
+<div class="pg-position"><h3>Como ele sustenta o sistema</h3><dl>
+<div><dt>Operação diária</dt><dd>As 50 tabelas <code>tb_*</code> organizam cadastros, atividades e registros do aplicativo. As relações entre elas permitem ligar, por exemplo, pessoas, condomínios e coletas.</dd></div>
+<div><dt>Análises</dt><dd>Sete dimensões e duas tabelas de fatos formam o Data Mart, para agrupar e acompanhar postagens e coletas.</dd></div>
+<div><dt>Outros serviços</dt><dd>Os dados relacionais formam o grafo no Neo4j. O PostgreSQL registra créditos e estornos; o Redis organiza a consulta do ranking.</dd></div>
+</dl><p class="pgadmin-note"><strong>PostgreSQL</strong> mantém os dados. <strong>pgAdmin</strong> oferece a interface para visualizar e administrar esse banco.</p></div>
+<div class="pg-diagrams"><h3>Diagrama relacional do PostgreSQL</h3>
+<p>Os mapas mostram as <strong>92 chaves estrangeiras</strong> declaradas nos esquemas: 83 nas tabelas operacionais e nove no Data Mart. A seta parte da coluna que contém a chave estrangeira e aponta para a tabela e a coluna referenciadas. Ao selecionar uma tabela, o mapa também mostra suas ligações com outras áreas.</p>
+<div class="pg-map-launch"><h4>Explorar o modelo completo</h4><div class="pg-map-links"><a href="modelo-postgresql-interativo.html" target="_blank" rel="noopener">Abrir diagrama em tela cheia</a></div></div>
+<iframe class="pg-map-frame" src="modelo-postgresql-interativo.html" title="Mapa interativo das 59 tabelas e 92 relações do PostgreSQL" loading="lazy"></iframe>
+<details class="pg-static-set"><summary>Ver diagramas em imagem</summary>
+<details class="pg-diagram-panel" open><summary>Pessoas e condomínios · 19 relações</summary><figure class="model-diagram"><div aria-label="Relações entre pessoas e condomínios" class="diagram-scroll" role="region" tabindex="0"><a href="assets/modelo-postgresql-cadastros.svg" aria-label="Abrir diagrama de pessoas e condomínios em tamanho integral"><img src="assets/modelo-postgresql-cadastros.svg" alt="Diagrama das chaves estrangeiras entre usuários, síndicos, condomínios, torres, moradores e cadastros associados." loading="lazy"></a></div><figcaption>Abra a imagem para ver em tamanho integral.</figcaption></figure></details>
+<details class="pg-diagram-panel"><summary>Cooperativas e coletas · 18 relações</summary><figure class="model-diagram"><div aria-label="Relações de cooperativas e coletas" class="diagram-scroll" role="region" tabindex="0"><a href="assets/modelo-postgresql-coletas.svg" aria-label="Abrir diagrama de cooperativas e coletas em tamanho integral"><img src="assets/modelo-postgresql-coletas.svg" alt="Diagrama das chaves estrangeiras de cooperativas, pontos, agendamentos, visitas e avaliações de coleta." loading="lazy"></a></div><figcaption>Abra a imagem para ver em tamanho integral.</figcaption></figure></details>
+<details class="pg-diagram-panel"><summary>Postagens e pontos · 16 relações</summary><figure class="model-diagram"><div aria-label="Relações de postagens e pontos" class="diagram-scroll" role="region" tabindex="0"><a href="assets/modelo-postgresql-postagens.svg" aria-label="Abrir diagrama de postagens e pontos em tamanho integral"><img src="assets/modelo-postgresql-postagens.svg" alt="Diagrama das chaves estrangeiras de postagens, votos e movimentações de pontos." loading="lazy"></a></div><figcaption>Abra a imagem para ver em tamanho integral.</figcaption></figure></details>
+<details class="pg-diagram-panel"><summary>Educação e quizzes · 14 relações</summary><figure class="model-diagram"><div aria-label="Relações de educação e quizzes" class="diagram-scroll" role="region" tabindex="0"><a href="assets/modelo-postgresql-educacao.svg" aria-label="Abrir diagrama de educação e quizzes em tamanho integral"><img src="assets/modelo-postgresql-educacao.svg" alt="Diagrama das chaves estrangeiras de cursos, aulas, quizzes, perguntas, alternativas e tentativas." loading="lazy"></a></div><figcaption>Abra a imagem para ver em tamanho integral.</figcaption></figure></details>
+<details class="pg-diagram-panel"><summary>Conversas e auditoria · 16 relações</summary><figure class="model-diagram"><div aria-label="Relações de conversas e auditoria" class="diagram-scroll" role="region" tabindex="0"><a href="assets/modelo-postgresql-auditoria.svg" aria-label="Abrir diagrama de conversas e auditoria em tamanho integral"><img src="assets/modelo-postgresql-auditoria.svg" alt="Diagrama das chaves estrangeiras de conversas, mensagens e registros de auditoria." loading="lazy"></a></div><figcaption>Abra a imagem para ver em tamanho integral.</figcaption></figure></details>
+<details class="pg-diagram-panel"><summary>Data Mart · nove relações entre fatos e dimensões</summary><figure class="model-diagram"><div aria-label="Relações do Data Mart" class="diagram-scroll" role="region" tabindex="0"><a href="assets/modelo-postgresql-datamart.svg" aria-label="Abrir diagrama do Data Mart em tamanho integral"><img src="assets/modelo-postgresql-datamart.svg" alt="Diagrama das nove chaves estrangeiras de fato_postagens e fato_coletas para sete dimensões." loading="lazy"></a></div><figcaption>Abra a imagem para ver em tamanho integral.</figcaption></figure></details>
+<details class="pg-diagram-panel"><summary>Tabelas de apoio · métricas e migração</summary><figure class="model-diagram"><div aria-label="Tabelas de apoio do PostgreSQL" class="diagram-scroll" role="region" tabindex="0"><a href="assets/modelo-postgresql-apoio.svg" aria-label="Abrir diagrama das tabelas de apoio em tamanho integral"><img src="assets/modelo-postgresql-apoio.svg" alt="Chaves primárias das tabelas tb_metricas_dau e tb_migracao_ids_map, sem chaves estrangeiras de saída." loading="lazy"></a></div><figcaption>Abra a imagem para ver em tamanho integral.</figcaption></figure></details>
+</details>
+</div>
+<h3>As 50 tabelas operacionais</h3>
+<div aria-label="Tabela de PostgreSQL" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Área</th>
+<th>Tabelas</th>
+<th>Papel no sistema</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tipos e referências (11)</td>
+<td><code>tb_lkp_tipos_usuarios</code>, <code>tb_lkp_tipos_condominios</code>, <code>tb_lkp_status_agendamentos</code>, <code>tb_lkp_dias_semanas</code>, <code>tb_lkp_categorias_residuos</code>, <code>tb_lkp_niveis_confianca</code>, <code>tb_lkp_status_validacoes_postagens</code>, <code>tb_lkp_tipos_votos_postagens</code>, <code>tb_lkp_motivos_denuncia</code>, <code>tb_lkp_tipos_eventos_auditados</code>, <code>tb_lkp_tipos_operacoes_auditoria</code></td>
+<td>Tipos, categorias, status, níveis de confiança e tipos de auditoria.</td>
+</tr>
+<tr>
+<td>Endereços e pessoas (5)</td>
+<td><code>tb_enderecos</code>, <code>tb_usuarios</code>, <code>tb_sindicos</code>, <code>tb_telefones</code>, <code>tb_notificacoes</code></td>
+<td>Cadastro e comunicação.</td>
+</tr>
+<tr>
+<td>Condomínios (3)</td>
+<td><code>tb_condominios</code>, <code>tb_torres</code>, <code>tb_moradores</code></td>
+<td>Estrutura física e moradia.</td>
+</tr>
+<tr>
+<td>Cooperativas e pontos de coleta (4)</td>
+<td><code>tb_cooperativas</code>, <code>tb_pontos_coletas</code>, <code>tb_rel_cooperativas_categorias_materiais</code>, <code>tb_rel_pontos_coletas_categorias</code></td>
+<td>Cooperativas, locais de entrega e materiais aceitos.</td>
+</tr>
+<tr>
+<td>Vínculo com condomínio (1)</td>
+<td><code>tb_rel_usuarios_condominios</code></td>
+<td>Associação, aprovação e confiança dos usuários.</td>
+</tr>
+<tr>
+<td>Descartes e moderação (2)</td>
+<td><code>tb_postagens</code>, <code>tb_rel_votos_postagens</code></td>
+<td>Postagens e votos de aprovação ou denúncia.</td>
+</tr>
+<tr>
+<td>Coletas (4)</td>
+<td><code>tb_agendamentos_coletas</code>, <code>tb_visitas_coletas</code>, <code>tb_avaliacoes_visitas_coletas</code>, <code>tb_rel_recorrencias_agendamentos</code></td>
+<td>Solicitações, visitas, avaliações e recorrências.</td>
+</tr>
+<tr>
+<td>Educação (8)</td>
+<td><code>tb_cursos</code>, <code>tb_aulas</code>, <code>tb_quizzes</code>, <code>tb_perguntas_quiz</code>, <code>tb_alternativas_quiz</code>, <code>tb_tentativas_quiz</code>, <code>tb_rel_respostas_tentativas_quiz</code>, <code>tb_rel_usuarios_cursos</code></td>
+<td>Cursos, aulas e desempenho nos quizzes.</td>
+</tr>
+<tr>
+<td>Autenticação e pontos (2)</td>
+<td><code>tb_autenticacoes_api</code>, <code>tb_movimentacoes_pontos</code></td>
+<td>Tokens da API e histórico oficial da pontuação.</td>
+</tr>
+<tr>
+<td>Auditoria (4)</td>
+<td><code>tb_log_auditoria</code>, <code>tb_log_auditoria_postagens</code>, <code>tb_log_auditoria_agendamentos_coletas</code>, <code>tb_log_auditoria_usuarios_condominios</code></td>
+<td>Registro de eventos e alterações.</td>
+</tr>
+<tr>
+<td>Atividade e recuperação (3)</td>
+<td><code>tb_atividades_diarias_usuarios</code>, <code>tb_metricas_dau</code>, <code>tb_recuperacoes_senha</code></td>
+<td>Atividade diária, métricas de uso e recuperação de senha.</td>
+</tr>
+<tr>
+<td>Migração (1)</td>
+<td><code>tb_migracao_ids_map</code></td>
+<td>Correspondência entre IDs antigos e novos.</td>
+</tr>
+<tr>
+<td>Conversas entre organizações (2)</td>
+<td><code>tb_conversas</code>, <code>tb_mensagens_conversas</code></td>
+<td>Chat entre cooperativa e condomínio.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Os grupos somam 50 tabelas operacionais. O esquema também declara chaves primárias e estrangeiras, restrições, funções, procedimentos, gatilhos e <em>views</em>.</p>
+<h3>As nove tabelas do Data Mart</h3>
+<p>O Data Mart usa um modelo estrela. As sete dimensões dão contexto aos dados; os dois fatos registram eventos que podem ser contados e agrupados. As chaves <code>sk_*</code> identificam as dimensões e são referenciadas pelos fatos.</p>
+<div aria-label="Tabela de PostgreSQL" class="table-scroll" role="region" tabindex="0"><table>
+<thead>
+<tr>
+<th>Tabela</th>
+<th>Campos declarados</th>
+<th>Origem e uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_tempo</code></td>
+<td><code>sk_tempo</code> (PK), <code>data_completa</code> (única), <code>ano</code>, <code>trimestre</code>, <code>mes</code>, <code>nome_mes</code>, <code>dia</code>, <code>dia_semana_numero</code>, <code>nome_dia_semana</code>, <code>is_fim_de_semana</code></td>
+<td>Datas dos eventos, compartilhadas pelos dois fatos.</td>
+</tr>
+<tr>
+<td><code>dim_usuario</code></td>
+<td><code>sk_usuario</code> (PK), <code>id_usuario</code> (único), <code>nome_usuario</code>, <code>email_usuario</code>, <code>tipo_usuario</code>, <code>ativo</code>, <code>carregado_em</code></td>
+<td>Usuários e seus tipos.</td>
+</tr>
+<tr>
+<td><code>dim_condominio</code></td>
+<td><code>sk_condominio</code> (PK), <code>id_condominio</code> (único), <code>nome_condominio</code>, <code>tipo_condominio</code>, <code>cidade</code>, <code>estado</code>, <code>ativo</code>, <code>carregado_em</code></td>
+<td>Condomínios, tipos e endereços.</td>
+</tr>
+<tr>
+<td><code>dim_cooperativa</code></td>
+<td><code>sk_cooperativa</code> (PK), <code>id_cooperativa</code> (único), <code>nome_cooperativa</code>, <code>cidade</code>, <code>estado</code>, <code>carregado_em</code></td>
+<td>Cooperativas e endereços.</td>
+</tr>
+<tr>
+<td><code>dim_categoria_residuo</code></td>
+<td><code>sk_categoria</code> (PK), <code>id_categoria</code> (único), <code>nome_categoria</code>, <code>permite_reciclagem</code>, <code>pontos_base</code>, <code>limite_pontos_ciclo</code>, <code>carregado_em</code></td>
+<td>Categorias de resíduo e limites de pontuação.</td>
+</tr>
+<tr>
+<td><code>dim_status_postagem</code></td>
+<td><code>sk_status_postagem</code> (PK), <code>id_status_validacao</code> (único), <code>codigo</code> (único), <code>descricao</code></td>
+<td>Estados de validação das postagens.</td>
+</tr>
+<tr>
+<td><code>dim_status_agendamento</code></td>
+<td><code>sk_status_agendamento</code> (PK), <code>id_status</code> (único), <code>nome_status</code></td>
+<td>Estados dos agendamentos.</td>
+</tr>
+<tr>
+<td><code>fato_postagens</code></td>
+<td><code>sk_fato_postagem</code> (PK), <code>id_postagem</code> (único), <code>sk_tempo</code>, <code>sk_usuario</code>, <code>sk_condominio</code>, <code>sk_categoria</code>, <code>sk_status_postagem</code> (FKs), <code>qtd_postagens</code>, <code>foi_aprovada</code>, <code>pontos_base_categoria</code></td>
+<td>Uma linha por postagem. Permite analisar data, pessoa, condomínio, categoria e status.</td>
+</tr>
+<tr>
+<td><code>fato_coletas</code></td>
+<td><code>sk_fato_coleta</code> (PK), <code>id_visita_coleta</code> (único), <code>sk_tempo</code>, <code>sk_condominio</code>, <code>sk_cooperativa</code>, <code>sk_status_agendamento</code> (FKs), <code>foi_realizada</code>, <code>houve_confirmacao</code>, <code>qtd_visitas</code></td>
+<td>Uma linha por visita de coleta. Permite analisar data, condomínio, cooperativa e status.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Cada linha de <code>fato_postagens</code> recebe <code>qtd_postagens=1</code>; cada visita recebe <code>qtd_visitas=1</code>. <code>pontos_base_categoria</code> representa a pontuação definida no cadastro da categoria. O histórico efetivo de créditos e estornos fica em <code>tb_movimentacoes_pontos</code>. O modelo permite agrupar postagens por mês e material, somar <code>qtd_postagens</code> e comparar volume e aprovação.</p>
+<p>O Data Mart recebe dados das tabelas operacionais para atualizar suas dimensões e seus fatos.</p>
+<h3>Histórico oficial de pontos</h3>
+<p><code>tb_movimentacoes_pontos</code> usa <code>id_movimentacao</code> como chave primária. Cada linha registra o usuário, a origem (<code>POSTAGEM</code> ou <code>QUIZ</code>), o tipo (<code>CREDITO</code>, <code>ESTORNO</code> ou <code>RESTAURACAO</code>), a quantidade positiva de pontos, a data <code>ocorrido_em</code> e uma <code>idempotency_key</code> única. A linha pode apontar para uma postagem ou tentativa de quiz. Estornos e restaurações apontam para o crédito original. Os campos <code>redis_sincronizado</code>, <code>redis_sincronizado_em</code>, <code>tentativas_sync_redis</code> e <code>ultimo_erro_redis</code> acompanham a projeção para Redis.</p>
+<p>No exemplo ilustrativo abaixo, os sinais mostram o efeito no saldo. A coluna <code>pontos</code> continua positiva; o tipo da movimentação determina se o valor entra ou sai.</p>
+<pre><code class="language-text">1. CREDITO      +12 pontos  → postagem 91
+2. ESTORNO      -12 pontos  → referência ao crédito 1
+3. RESTAURACAO  +12 pontos  → referência ao crédito 1
+Saldo desses eventos: 12 pontos
+</code></pre>
+<p>Os registros de pontos contemplam crédito, estorno e restauração, além de indicar o estado da sincronização com Redis.</p>
+</section></main>
+</div>
+<footer><div class="footer-brand"><span>EcoCiente · Relatório de bancos de dados</span></div></footer>
+</div>
+<script>
+    (() => {
+      const progress = document.querySelector('.reading-progress');
+      const links = [...document.querySelectorAll('.toc a')];
+      const sections = links.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+      let scheduled = false;
+      function updateReadingState() {
+        const available = document.documentElement.scrollHeight - innerHeight;
+        progress.style.width = (available > 0 ? Math.min(100, Math.max(0, scrollY / available * 100)) : 100) + '%';
+        const active = [...sections].reverse().find(section => section.getBoundingClientRect().top <= innerHeight * .35) || sections[0];
+        for (const link of links) {
+          if (active && link.hash === '#' + active.id) link.setAttribute('aria-current', 'location');
+          else link.removeAttribute('aria-current');
+        }
+        scheduled = false;
+      }
+      function scheduleUpdate() {
+        if (!scheduled) { scheduled = true; requestAnimationFrame(updateReadingState); }
+      }
+      addEventListener('scroll', scheduleUpdate, { passive: true });
+      addEventListener('resize', scheduleUpdate);
+      const pgPanels = [...document.querySelectorAll('.pg-static-set, .pg-diagram-panel')];
+      let openedForPrint = [];
+      addEventListener('beforeprint', () => {
+        openedForPrint = pgPanels.filter(panel => panel.open);
+        pgPanels.forEach(panel => { panel.open = true; });
+      });
+      addEventListener('afterprint', () => {
+        pgPanels.forEach(panel => { panel.open = openedForPrint.includes(panel); });
+      });
+      const diagramSizes = { mongodb: [1540, 900], neo4j: [1800, 1260] };
+      document.querySelectorAll('.zoom-diagram').forEach(figure => {
+        const viewport = figure.querySelector('.diagram-scroll');
+        const img = viewport.querySelector('img');
+        const [naturalWidth, naturalHeight] = diagramSizes[figure.dataset.diagram];
+        let currentWidth = 0;
+        let drag = null;
+        let suppressClick = false;
+        const fitWidth = () => Math.min(viewport.clientWidth, viewport.clientHeight * naturalWidth / naturalHeight);
+        function setWidth(nextWidth, anchorX = viewport.clientWidth / 2, anchorY = viewport.clientHeight / 2) {
+          const minimum = fitWidth() * .8;
+          const width = Math.max(minimum, Math.min(naturalWidth * 2, nextWidth));
+          const previous = currentWidth || width;
+          const worldX = (viewport.scrollLeft + anchorX) / previous;
+          const worldY = (viewport.scrollTop + anchorY) / previous;
+          currentWidth = width;
+          img.style.width = width + 'px';
+          viewport.scrollLeft = worldX * width - anchorX;
+          viewport.scrollTop = worldY * width - anchorY;
+        }
+        function fit() {
+          setWidth(fitWidth());
+          viewport.scrollLeft = 0;
+          viewport.scrollTop = 0;
+        }
+        figure.querySelector('.zoom-in').addEventListener('click', () => setWidth(currentWidth * 1.2));
+        figure.querySelector('.zoom-out').addEventListener('click', () => setWidth(currentWidth / 1.2));
+        figure.querySelector('.fit').addEventListener('click', fit);
+        viewport.addEventListener('wheel', event => {
+          event.preventDefault();
+          const rect = viewport.getBoundingClientRect();
+          setWidth(currentWidth * (event.deltaY < 0 ? 1.13 : 1 / 1.13), event.clientX - rect.left, event.clientY - rect.top);
+        }, { passive: false });
+        viewport.addEventListener('pointerdown', event => {
+          if (event.button !== 0) return;
+          drag = { id: event.pointerId, x: event.clientX, y: event.clientY, left: viewport.scrollLeft, top: viewport.scrollTop, moved: false };
+        });
+        viewport.addEventListener('pointermove', event => {
+          if (!drag || drag.id !== event.pointerId) return;
+          const dx = event.clientX - drag.x;
+          const dy = event.clientY - drag.y;
+          if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+          if (!drag.moved) {
+            drag.moved = true;
+            viewport.setPointerCapture(event.pointerId);
+            viewport.classList.add('is-panning');
+          }
+          viewport.scrollLeft = drag.left - dx;
+          viewport.scrollTop = drag.top - dy;
+          event.preventDefault();
+        });
+        function finishDrag(event) {
+          if (!drag || drag.id !== event.pointerId) return;
+          suppressClick = drag.moved;
+          if (suppressClick) setTimeout(() => { suppressClick = false; }, 0);
+          drag = null;
+          viewport.classList.remove('is-panning');
+          if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+        }
+        viewport.addEventListener('pointerup', finishDrag);
+        viewport.addEventListener('pointercancel', finishDrag);
+        viewport.addEventListener('click', event => {
+          if (!suppressClick) return;
+          event.preventDefault();
+          suppressClick = false;
+        }, true);
+        viewport.addEventListener('keydown', event => {
+          if (event.key === '+' || event.key === '=') setWidth(currentWidth * 1.2);
+          else if (event.key === '-') setWidth(currentWidth / 1.2);
+          else if (event.key === '0') fit();
+          else return;
+          event.preventDefault();
+        });
+        fit();
+        addEventListener('resize', fit);
+      });
+      updateReadingState();
+    })();
+  </script>
+</body>
+</html>
